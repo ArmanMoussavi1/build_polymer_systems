@@ -8,7 +8,8 @@ class PolymerChain:
         self.bond_length = bond_length
         self.positions = np.zeros((num_atoms, 3))
         self.atom_types = np.zeros(num_atoms, dtype=int)
-        self.atom_ids = np.arange(chain_id * num_atoms, chain_id * num_atoms + num_atoms)
+        # Atom IDs start from 1 (chain_id * num_atoms + 1)
+        self.atom_ids = np.arange(chain_id * num_atoms + 1, chain_id * num_atoms + num_atoms + 1)
         self.positions[0] = start_position
         self.atom_types[0] = 1
         self.atom_types[-1] = 1
