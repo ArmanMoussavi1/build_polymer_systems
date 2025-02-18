@@ -8,13 +8,11 @@ class PolymerChain:
         self.bond_length = bond_length
         self.positions = np.zeros((num_atoms, 3))
         self.atom_types = np.zeros(num_atoms, dtype=int)
-        # Atom IDs start from 1 (chain_id * num_atoms + 1)
         self.atom_ids = np.arange(chain_id * num_atoms + 1, chain_id * num_atoms + num_atoms + 1)
         self.positions[0] = start_position
         self.atom_types[0] = 1
         self.atom_types[-1] = 1
         self.atom_types[1:-1] = 2
-
         self._generate_positions(existing_positions)
 
     def _generate_positions(self, existing_positions):
@@ -39,14 +37,14 @@ class PolymerChain:
 
 
 class SimulationBox:
-    def __init__(self, box_size, num_chains, num_atoms, bond_length):
+    def __init__(self, box_size, num_chains, num_atoms, bond_length, spacing_factor=3):
         self.box_size = box_size
         self.num_chains = num_chains
         self.num_atoms = num_atoms
         self.bond_length = bond_length
+        self.spacing_factor = spacing_factor
         self.chains = []
         self.existing_positions = set()
-
         self._initialize_chains()
 
     def _initialize_chains(self):
@@ -57,7 +55,7 @@ class SimulationBox:
 
     def _generate_grid_points(self):
         grid_size = np.ceil(np.cbrt(self.num_chains))
-        spacing = self.box_size / grid_size
+        spacing = self.bond_length * self.spacing_factor  # Increase spacing by a factor
         return [spacing * np.array([i, j, k]) for i in range(int(grid_size)) for j in range(int(grid_size)) for k in range(int(grid_size))]
 
     def generate_bonds(self):
@@ -82,8 +80,7 @@ class SimulationBox:
         all_positions = np.concatenate([chain.positions for chain in self.chains])
         min_coords = np.min(all_positions, axis=0)
         max_coords = np.max(all_positions, axis=0)
-        buffer = self.num_chains / 2 * self.bond_length
-        buffer = 5  # Fixed buffer value
+        buffer = 2  # Fixed buffer value
         return min_coords[0] - buffer, max_coords[0] + buffer, \
                min_coords[1] - buffer, max_coords[1] + buffer, \
                min_coords[2] - buffer, max_coords[2] + buffer
@@ -127,13 +124,14 @@ class SimulationBox:
 def main(N, num_chains):
     box_size = np.array([50.0, 50.0, 50.0])
     bond_length = 1.5
+    spacing_factor = 10  # Adjust spacing factor
 
-    sim_box = SimulationBox(box_size, num_chains, N, bond_length)
+    sim_box = SimulationBox(box_size, num_chains, N, bond_length, spacing_factor)
     sim_box.write_lammps_input(f'N{N}_chains{num_chains}.data')
     print("LAMMPS output complete.")
 
 
 # Run the simulation
-N = 400
+N = 20
 num_chains = 100
 main(N, num_chains)
